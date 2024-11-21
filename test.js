@@ -1,107 +1,62 @@
 var axios = require('axios');
 const readline = require('readline');
 
-// 登录并获取 token
-function loginAndGetToken() {
+let token = 'sk-7d8977725bd0423cae130a8cc4b346da'; // 替换为你的实际 token
+
+// 创建 readline 接口
+const rl = readline.createInterface({
+    input: process.stdin,
+    output: process.stdout
+});
+
+// 发送请求到 DeepSeek API
+async function sendChatRequest(prompt) {
     var data = JSON.stringify({
-        "email": "",
-        "mobile": "18790492316",
-        "password": "12345678910Hututu",
-        "area_code": "+86",
-        "device_id": "Bb6EAZ0dp5S/KmKp6WFDg7HmpMwavCKvpU+auiduwBX5aNrVu4OniIb6CTn8CCUl1j4ckw==",
-        "os": "web"
+        "model": "deepseek-chat",
+        "messages": [
+            {
+                "role": "system",
+                "content": "You are a helpful assistant."
+            },
+            {
+                "role": "user",
+                "content": prompt
+            }
+        ],
+        "stream": true
     });
 
     var config = {
         method: 'post',
-        url: 'https://chat.deepseek.com/api/v0/users/login',
+        url: 'https://api.deepseek.com/chat/completions',
         headers: { 
-            'accept': '*/*', 
-            'accept-language': 'zh-CN,zh;q=0.9,en;q=0.8,en-GB;q=0.7,en-US;q=0.6', 
-            'cache-control': 'no-cache', 
-            'origin': 'https://chat.deepseek.com', 
-            'pragma': 'no-cache', 
-            'priority': 'u=1, i', 
-            'referer': 'https://chat.deepseek.com/sign_in', 
-            'sec-ch-ua': '"Microsoft Edge";v="131", "Chromium";v="131", "Not_A Brand";v="24"', 
-            'sec-ch-ua-mobile': '?0', 
-            'sec-ch-ua-platform': '"Windows"', 
-            'sec-fetch-dest': 'empty', 
-            'sec-fetch-mode': 'cors', 
-            'sec-fetch-site': 'same-origin', 
-            'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36 Edg/131.0.0.0', 
-            'x-app-version': '20241018.0', 
-            'content-type': 'application/json', 
-            'Host': 'chat.deepseek.com', 
-            'Connection': 'keep-alive', 
-            'Cookie': 'HWWAFSESTIME=1732097577917; HWWAFSESID=01b2c760445a0807bc'
-        },
-        data: data
-    };
-
-    return axios(config)
-        .then(function (response) {
-            console.log("Token:", response.data.data.user.token); // 输出 token
-            return response.data.data.user.token; // 返回 token
-        })
-        .catch(function (error) {
-            console.error("登录错误:", error); // 输出错误信息
-        });
-}
-
-// 使用 token 进行聊天请求
-function chatWithToken(token, prompt) {
-    var data = JSON.stringify({
-        "chat_session_id": "e0a0e487-c60f-4664-baf4-15e575173993",
-        "parent_message_id": null,
-        "prompt": prompt,
-        "ref_file_ids": []
-    });
-
-    var config = {
-        method: 'post',
-        url: 'https://chat.deepseek.com/api/v0/chat/completion',
-        headers: { 
-            'accept': '*/*', 
-            'accept-language': 'zh-CN,zh;q=0.9,en;q=0.8,en-GB;q=0.7,en-US;q=0.6', 
-            'authorization': `Bearer ${token}`, // 使用获取的 token
-            'cache-control': 'no-cache', 
-            'origin': 'https://chat.deepseek.com', 
-            'pragma': 'no-cache', 
-            'priority': 'u=1, i', 
-            'referer': 'https://chat.deepseek.com/', 
-            'sec-ch-ua': '"Microsoft Edge";v="131", "Chromium";v="131", "Not_A Brand";v="24"', 
-            'sec-ch-ua-mobile': '?0', 
-            'sec-ch-ua-platform': '"Windows"', 
-            'sec-fetch-dest': 'empty', 
-            'sec-fetch-mode': 'cors', 
-            'sec-fetch-site': 'same-origin', 
-            'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36 Edg/131.0.0.0', 
-            'x-app-version': '20241018.0', 
-            'content-type': 'application/json', 
-            'Host': 'chat.deepseek.com', 
-            'Connection': 'keep-alive', 
-            'Cookie': 'HWWAFSESTIME=1732097577917; HWWAFSESID=01b2c760445a0807bc'
+            'Authorization': `Bearer ${token}`, 
+            'User-Agent': 'Apifox/1.0.0 (https://apifox.com)', 
+            'Content-Type': 'application/json', 
+            'Accept': '*/*', 
+            'Host': 'api.deepseek.com', 
+            'Connection': 'keep-alive'
         },
         data: data,
         responseType: 'stream' // 设置响应类型为流
     };
 
-    return axios(config)
-        .then(function (response) {
-            return response.data; // 返回响应流
-        })
-        .catch(function (error) {
-            console.error("聊天错误:", error); // 输出错误信息
-        });
+    try {
+        const response = await axios(config);
+        return response.data; // 返回响应数据
+    } catch (error) {
+        console.error("请求错误:", error);
+    }
 }
 
-// 提取 content 值并实时输出
+// 提取并输出内容
 function extractContent(stream) {
     const rl = readline.createInterface({
         input: stream,
         crlfDelay: Infinity
     });
+
+    let output = '';
 
     rl.on('line', (line) => {
         if (line.startsWith('data: ')) {
@@ -111,13 +66,12 @@ function extractContent(stream) {
                 return;
             }
             try {
-                const data = JSON.parse(jsonStr);
-                if (data.choices && data.choices.length > 0) {
-                    const delta = data.choices[0].delta;
+                const parsedData = JSON.parse(jsonStr);
+                if (parsedData.choices && parsedData.choices.length > 0) {
+                    const delta = parsedData.choices[0].delta;
                     if (delta && delta.content) {
-                        // 处理转义字符
-                        const decodedContent = delta.content.replace(/\\n/g, '\n').replace(/\\"/g, '"');
-                        process.stdout.write(decodedContent); // 实时输出内容
+                        output += delta.content; // 收集内容
+                        process.stdout.write(delta.content); // 实时输出内容
                     }
                 }
             } catch (err) {
@@ -127,36 +81,23 @@ function extractContent(stream) {
     });
 
     rl.on('close', () => {
-        console.log('\n聊天结束。');
-        promptUser(); // 继续等待用户输入
+        console.log('\n助手:', output); // 输出助手的回答
+        promptUser(); // 继续提示用户输入
     });
 }
 
 // 提示用户输入
 function promptUser() {
-    const rl = readline.createInterface({
-        input: process.stdin,
-        output: process.stdout
-    });
-
     rl.question('请输入你的问题（或输入 "exit" 退出）：', async (answer) => {
         if (answer.toLowerCase() === 'exit') {
             rl.close();
             process.exit(0);
         } else {
-            const token = await loginAndGetToken(); // 获取 token
-            if (token) {
-                const stream = await chatWithToken(token, answer); // 使用 token 进行聊天
-                extractContent(stream); // 实时提取并输出 content 值
-            }
-            rl.close();
+            const stream = await sendChatRequest(answer); // 发送请求
+            extractContent(stream); // 提取内容
         }
     });
 }
 
-// 主函数
-async function main() {
-    promptUser(); // 启动用户输入提示
-}
-
-main();
+// 启动程序
+promptUser();
