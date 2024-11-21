@@ -2,11 +2,10 @@
 ### 使用deep-seek api 购买api不会出现此种封禁，官网说不限并发
 
 演示：
-<video width="320" height="240" controls>
-  <source src="2024-11-21_21-06-23.mp4" type="video/mp4">
-</video>
 
 
+
+https://github.com/user-attachments/assets/436355ef-fc2b-419b-a6ad-bf9a09a8bd31
 
 
 # DeepSeek 技术文档
